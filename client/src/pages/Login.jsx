@@ -1,42 +1,60 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import api from "../api/axios";
+import { useNavigate } from "react-router-dom";
 
-const Login = ({ setUser }) => {
-  const [email, setEmail] = useState('');
+export default function Login() {
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const [form, setForm] = useState({
+    email: "",
+    password: ""
+  });
+
+  const handleChange = e => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async e => {
     e.preventDefault();
-    
-    // MOCK LOGIC: 
-    // If email contains "admin", log in as admin. 
-    // Otherwise, log in as a normal user.
-    if (email.includes('admin')) {
-      setUser({ loggedIn: true, role: 'admin' });
-      navigate('/admin/dashboard');
-    } else {
-      setUser({ loggedIn: true, role: 'user' });
-      navigate('/dashboard');
+
+    try {
+      const res = await api.post("/auth/login", form);
+
+      localStorage.setItem("token", res.data.token);
+      navigate("/dashboard");
+
+    } catch (err) {
+      alert("Login failed");
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form onSubmit={handleLogin} className="p-10 bg-white rounded shadow-xl w-96">
-        <h2 className="text-2xl font-bold mb-5 text-center">BS2 Login</h2>
-        <input 
-          type="email" 
-          placeholder="Email (use 'admin' for admin view)" 
-          className="w-full p-3 border rounded mb-4"
-          onChange={(e) => setEmail(e.target.value)}
-          required
+    <div className="min-h-screen flex items-center justify-center">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 shadow rounded w-96"
+      >
+        <h2 className="text-2xl font-bold mb-6">Login</h2>
+
+        <input
+          name="email"
+          placeholder="Email"
+          className="w-full border p-2 mb-4"
+          onChange={handleChange}
         />
-        <button className="w-full bg-blue-600 text-white p-3 rounded font-bold hover:bg-blue-700">
+
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          className="w-full border p-2 mb-4"
+          onChange={handleChange}
+        />
+
+        <button className="bg-blue-600 text-white w-full py-2 rounded">
           Login
         </button>
       </form>
     </div>
   );
-};
-
-export default Login;
+}
