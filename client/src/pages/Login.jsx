@@ -14,7 +14,7 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async e => {
+ /* const handleSubmit = async e => {
     e.preventDefault();
 
     try {
@@ -27,7 +27,15 @@ export default function Login() {
       alert("Login failed");
     }
   };
+*/
 
+//THIS PART IS JUST TO TEST AND SEE YOUR DASHBOARD TEMPORARILY BYPASS LOGIN
+const handleSubmit = (e) => {
+  e.preventDefault();
+  // Bypass the backend for now
+  localStorage.setItem("token", "fake-test-token");
+  navigate("/dashboard");
+};
   return (
     <div className="min-h-screen flex items-center justify-center">
       <form
