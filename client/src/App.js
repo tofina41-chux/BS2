@@ -3,10 +3,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
+import Register from './pages/Register';
 
 function App() {
   // This 'user' state will start as null (not logged in)
-  const [user, setUser] = useState({ loggedIn: false, role: null });
+  const [user, setUser] = useState({ loggedIn: true, role: 'admin' });
 
   return (
     <Router>
@@ -14,14 +15,16 @@ function App() {
         {/* Pass the setUser function to Login so it can update the state */}
         <Route path="/login" element={<Login setUser={setUser} />} />
 
-        <Route 
-          path="/dashboard" 
-          element={user.loggedIn ? <UserDashboard /> : <Navigate to="/login" />} 
+        <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/dashboard"
+          element={user.loggedIn ? <Dashboard /> : <Navigate to="/login" />}
         />
 
-        <Route 
-          path="/admin/dashboard" 
-          element={user.loggedIn && user.role === 'admin' ? <AdminDashboard /> : <Navigate to="/dashboard" />} 
+        <Route
+          path="/admin/dashboard"
+          element={user.loggedIn && user.role === 'admin' ? <AdminPanel /> : <Navigate to="/dashboard" />}
         />
 
         <Route path="/" element={<Navigate to="/login" />} />

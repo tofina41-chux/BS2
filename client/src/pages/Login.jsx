@@ -1,68 +1,103 @@
 import { useState } from "react";
 import api from "../api/axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
-export default function Login() {
+export default function Login({ setUser }) { // Added setUser prop to update App state
   const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    email: "",
-    password: ""
-  });
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
- /* const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    try {
-      const res = await api.post("/auth/login", form);
+    // --- TOGGLE THIS TO SWITCH BETWEEN REAL LOGIN AND TEST BYPASS ---
+    const useRealLogin = false;
 
-      localStorage.setItem("token", res.data.token);
+    if (useRealLogin) {
+      try {
+        const res = await api.post("/auth/login", form);
+        localStorage.setItem("token", res.data.token);
+        setUser({ loggedIn: true, role: res.data.role }); // Update global state
+        navigate("/dashboard");
+      } catch (err) {
+        alert("Login failed: " + (err.response?.data?.message || "Server Error"));
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // BYPASS MODE (For your testing)
+      localStorage.setItem("token", "fake-test-token");
+      setUser({ loggedIn: true, role: 'admin' });
       navigate("/dashboard");
-
-    } catch (err) {
-      alert("Login failed");
     }
   };
-*/
 
-//THIS PART IS JUST TO TEST AND SEE YOUR DASHBOARD TEMPORARILY BYPASS LOGIN
-const handleSubmit = (e) => {
-  e.preventDefault();
-  // Bypass the backend for now
-  localStorage.setItem("token", "fake-test-token");
-  navigate("/dashboard");
-};
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 shadow rounded w-96"
-      >
-        <h2 className="text-2xl font-bold mb-6">Login</h2>
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
 
-        <input
-          name="email"
-          placeholder="Email"
-          className="w-full border p-2 mb-4"
-          onChange={handleChange}
-        />
+        {/* Branding Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-blue-600 text-sm font-black tracking-widest uppercase mb-2">
+            Swahilipot Booking System
+          </h1>
+          <h2 className="text-3xl font-extrabold text-gray-800">Welcome Back</h2>
+          <p className="text-gray-500 mt-2 text-sm">Please enter your details to sign in</p>
+        </div>
 
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          className="w-full border p-2 mb-4"
-          onChange={handleChange}
-        />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <input
+              name="email"
+              type="email"
+              required
+              placeholder="name@company.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              onChange={handleChange}
+            />
+          </div>
 
-        <button className="bg-blue-600 text-white w-full py-2 rounded">
-          Login
-        </button>
-      </form>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              name="password"
+              type="password"
+              required
+              placeholder="••••••••"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center text-gray-600">
+              <input type="checkbox" className="mr-2 rounded" /> Remember me
+            </label>
+            <a href="#" className="text-blue-600 hover:underline font-semibold">Forgot password?</a>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-95 disabled:opacity-50"
+          >
+            {loading ? "Signing in..." : "Login"}
+          </button>
+        </form>
+
+        <div className="mt-8 text-center text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Link to="/Register" className="text-blue-600 font-bold hover:underline">
+            Register for free
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
