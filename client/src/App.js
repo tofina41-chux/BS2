@@ -22,9 +22,17 @@ function App() {
           element={user.loggedIn ? <Dashboard /> : <Navigate to="/login" />}
         />
 
+       // Change your Admin Route to check the REAL stored user
         <Route
           path="/admin/dashboard"
-          element={user.loggedIn && user.role === 'admin' ? <AdminPanel /> : <Navigate to="/dashboard" />}
+          element={
+            (() => {
+              const storedUser = JSON.parse(localStorage.getItem("user"));
+              return (storedUser?.loggedIn && storedUser?.role === 'admin')
+                ? <AdminPanel />
+                : <Navigate to="/dashboard" />;
+            })()
+          }
         />
 
         <Route path="/" element={<Navigate to="/login" />} />
