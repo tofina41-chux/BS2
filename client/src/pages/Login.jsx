@@ -2,12 +2,12 @@ import { useState } from "react";
 import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
 
-export default function Login({ setUser }) { // Added setUser prop to update App state
+export default function Login({ setUser }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -16,13 +16,21 @@ export default function Login({ setUser }) { // Added setUser prop to update App
     setLoading(true);
 
     // --- TOGGLE THIS TO SWITCH BETWEEN REAL LOGIN AND TEST BYPASS ---
-    const useRealLogin = false;
+    const useRealLogin = true;
 
     if (useRealLogin) {
       try {
         const res = await api.post("/auth/login", form);
-        localStorage.setItem("token", res.data.token);
-        setUser({ loggedIn: true, role: res.data.role }); // Update global state
+        const userData = {
+          id: res.data.user.id,
+          name: res.data.user.name,
+          email: res.data.user.email,
+          role: res.data.user.role,
+          loggedIn: true,
+        };
+
+        localStorage.setItem("user", JSON.stringify(userData));
+        setUser(userData);
         navigate("/dashboard");
       } catch (err) {
         alert("Login failed: " + (err.response?.data?.message || "Server Error"));
@@ -30,17 +38,26 @@ export default function Login({ setUser }) { // Added setUser prop to update App
         setLoading(false);
       }
     } else {
-      // BYPASS MODE (For your testing)
-      localStorage.setItem("token", "fake-test-token");
-      setUser({ loggedIn: true, role: 'admin' });
-      navigate("/dashboard");
+      // --- TEST BYPASS MODE ---
+      const fakeUser = {
+        id: "mock_id_123",
+        name: "Test Admin",
+        email: "admin@test.com",
+        role: "admin",
+        loggedIn: true,
+      };
+      localStorage.setItem("user", JSON.stringify(fakeUser));
+      setUser(fakeUser);
+      setTimeout(() => {
+        setLoading(false);
+        navigate("/dashboard");
+      }, 1000);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md transform transition-all">
-
         {/* Branding Header */}
         <div className="text-center mb-8">
           <h1 className="text-blue-600 text-sm font-black tracking-widest uppercase mb-2">
@@ -58,7 +75,7 @@ export default function Login({ setUser }) { // Added setUser prop to update App
               type="email"
               required
               placeholder="name@company.com"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               onChange={handleChange}
             />
           </div>
@@ -70,13 +87,13 @@ export default function Login({ setUser }) { // Added setUser prop to update App
               type="password"
               required
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               onChange={handleChange}
             />
           </div>
 
           <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center text-gray-600">
+            <label className="flex items-center text-gray-600 cursor-pointer">
               <input type="checkbox" className="mr-2 rounded" /> Remember me
             </label>
             <a href="#" className="text-blue-600 hover:underline font-semibold">Forgot password?</a>

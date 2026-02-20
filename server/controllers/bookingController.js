@@ -1,40 +1,65 @@
 const Booking = require("../models/Booking");
+const Room = require("../models/Room");
 
+// USER: Create a new booking request
 exports.createBooking = async (req, res) => {
   try {
-    const { roomId, startTime, endTime, date } = req.body;
+    const { roomId, userId, userName, userEmail, date, startTime, endTime } = req.body;
 
-    const bookingDate = new Date(date);
-    const now = new Date();
-
-    // ❌ Past date
-    if (bookingDate < now.setHours(0,0,0,0)) {
-      return res.status(400).json({ message: "Cannot book past dates" });
-    }
-
-    // ❌ Working hours (8AM - 6PM example)
-    const startHour = new Date(startTime).getHours();
-    if (startHour < 8 || startHour > 18) {
-      return res.status(400).json({ message: "Outside working hours" });
-    }
-
-    // ❌ Double booking check
-    const existingBooking = await Booking.findOne({
-      roomId,
+    const newBooking = new Booking({
+      room: roomId,
+      user: userId,
+      userName,
+      userEmail,
       date,
-      $or: [
-        { startTime: { $lt: endTime }, endTime: { $gt: startTime } }
-      ]
+      startTime,
+      endTime,
+      status: "Pending"
     });
 
-    if (existingBooking) {
-      return res.status(400).json({ message: "Room already booked" });
-    }
-
-    const booking = await Booking.create(req.body);
-    res.json(booking);
-
+    await newBooking.save();
+    res.status(201).json({ message: "Booking request sent!", booking: newBooking });
   } catch (error) {
-    res.status(500).json(error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ADMIN: Approve or Reject a booking
+exports.updateBookingStatus = async (req, res) => {
+  try {
+    const { bookingId, status, adminMessage } = req.body; // status will be 'Approved' or 'Rejected'
+
+    const booking = await Booking.findByIdAndUpdate(
+      bookingId,
+      { status, adminMessage },
+      { new: true }
+    );
+
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    res.json({ message: `Booking ${status.toLowerCase()} successfully!`, booking });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ADMIN: Get all bookings (for history and management)
+exports.getAllBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find().populate("room").sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// USER: Get my own bookings
+exports.getUserBookings = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const bookings = await Booking.find({ user: userId }).populate("room");
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
