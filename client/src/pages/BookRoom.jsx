@@ -13,41 +13,55 @@ export default function BookRoom() {
     endTime: ""
   });
 
+  // ✅ ADDED: Define storedUser here so the component can use it
+  const storedUser = JSON.parse(localStorage.getItem("user"));
+
   // 1. Fetch available rooms from the database
   useEffect(() => {
+    // ✅ ADDED: Redirect if not logged in
+    if (!storedUser) {
+      alert("Please login to book a room");
+      navigate("/login");
+      return;
+    }
+
     const fetchRooms = async () => {
       try {
         const res = await api.get("/rooms/all");
         setRooms(res.data);
       } catch (err) {
-        console.error("Error fetching rooms");
+        console.error("Error fetching rooms:", err);
       }
     };
     fetchRooms();
-  }, []);
+  }, [navigate]);
 
   const handleBooking = async (e) => {
     e.preventDefault();
     if (!selectedRoom) return alert("Please select a room first!");
 
     try {
-      // Note: In a real app, we'd get userId/Name from your 'user' state or localStorage
-      const userTokenData = {
-        userId: "65d1234567890", // Placeholder: Logic to get real ID needed later
-        userName: "Test User",
-        userEmail: "test@swahilipot.com"
+      const payload = {
+        roomId: selectedRoom._id,
+        // ✅ Now storedUser is defined, so this won't crash
+        userId: storedUser.id || storedUser._id,
+        userName: storedUser.name,
+        userEmail: storedUser.email,
+        date: bookingData.date,
+        startTime: bookingData.startTime,
+        endTime: bookingData.endTime
       };
 
-      await api.post("/bookings/request", {
-        roomId: selectedRoom._id,
-        ...userTokenData,
-        ...bookingData
-      });
+      console.log("Sending Payload:", payload);
 
-      alert("Booking request submitted! Wait for Admin approval.");
+      const res = await api.post("/bookings/request", payload);
+      alert("Success: " + res.data.message);
       navigate("/dashboard");
     } catch (err) {
-      alert("Booking failed. Please try again.");
+      console.error("Full Error Object:", err);
+      // ✅ Improved error message logic
+      const errMsg = err.response?.data?.error || err.response?.data?.message || "Server Unreachable";
+      alert("Booking failed: " + errMsg);
     }
   };
 
@@ -63,21 +77,27 @@ export default function BookRoom() {
               <MapPin className="text-indigo-600" /> 1. Select a Room
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {rooms.map((room) => (
-                <div
-                  key={room._id}
-                  onClick={() => setSelectedRoom(room)}
-                  className={`p-5 rounded-xl border-2 cursor-pointer transition-all ${selectedRoom?._id === room._id ? "border-indigo-600 bg-indigo-50" : "border-white bg-white hover:border-gray-200"
-                    }`}
-                >
-                  <h3 className="font-bold text-lg">{room.name}</h3>
-                  <p className="text-gray-500 text-sm mb-3">{room.space}</p>
-                  <div className="flex justify-between text-sm font-medium">
-                    <span className="flex items-center gap-1"><Users size={16} /> {room.capacity}</span>
-                    <span className="text-indigo-600">Ksh {room.pricePerHour}/hr</span>
+              {rooms.length === 0 ? (
+                <p className="text-gray-500 italic">No rooms available or loading...</p>
+              ) : (
+                rooms.map((room) => (
+                  <div
+                    key={room._id}
+                    onClick={() => setSelectedRoom(room)}
+                    className={`p-5 rounded-xl border-2 cursor-pointer transition-all ${selectedRoom?._id === room._id
+                      ? "border-indigo-600 bg-indigo-50"
+                      : "border-white bg-white hover:border-gray-200"
+                      }`}
+                  >
+                    <h3 className="font-bold text-lg">{room.name}</h3>
+                    <p className="text-gray-500 text-sm mb-3">{room.space}</p>
+                    <div className="flex justify-between text-sm font-medium">
+                      <span className="flex items-center gap-1"><Users size={16} /> {room.capacity}</span>
+                      <span className="text-indigo-600">Ksh {room.pricePerHour}/hr</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

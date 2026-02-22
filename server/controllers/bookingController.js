@@ -1,11 +1,9 @@
 const Booking = require("../models/Booking");
-const Room = require("../models/Room");
 
-// USER: Create a new booking request
-exports.createBooking = async (req, res) => {
+// 1. Logic for requesting a booking
+exports.requestBooking = async (req, res) => {
   try {
     const { roomId, userId, userName, userEmail, date, startTime, endTime } = req.body;
-
     const newBooking = new Booking({
       room: roomId,
       user: userId,
@@ -13,10 +11,8 @@ exports.createBooking = async (req, res) => {
       userEmail,
       date,
       startTime,
-      endTime,
-      status: "Pending"
+      endTime
     });
-
     await newBooking.save();
     res.status(201).json({ message: "Booking request sent!", booking: newBooking });
   } catch (error) {
@@ -24,26 +20,28 @@ exports.createBooking = async (req, res) => {
   }
 };
 
-// ADMIN: Approve or Reject a booking
+// 2. Logic for Admin to Approve/Reject
 exports.updateBookingStatus = async (req, res) => {
   try {
-    const { bookingId, status, adminMessage } = req.body; // status will be 'Approved' or 'Rejected'
-
-    const booking = await Booking.findByIdAndUpdate(
-      bookingId,
+    const { status, adminMessage } = req.body;
+    // We get the ID from req.params.id because the route is /status/:id
+    const updatedBooking = await Booking.findByIdAndUpdate(
+      req.params.id,
       { status, adminMessage },
       { new: true }
     );
 
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
+    if (!updatedBooking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
 
-    res.json({ message: `Booking ${status.toLowerCase()} successfully!`, booking });
+    res.json({ message: `Booking ${status}`, booking: updatedBooking });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// ADMIN: Get all bookings (for history and management)
+// 3. Logic to get ALL bookings
 exports.getAllBookings = async (req, res) => {
   try {
     const bookings = await Booking.find().populate("room").sort({ createdAt: -1 });
@@ -53,11 +51,10 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
-// USER: Get my own bookings
+// 4. Logic to get specific User bookings
 exports.getUserBookings = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const bookings = await Booking.find({ user: userId }).populate("room");
+    const bookings = await Booking.find({ user: req.params.userId }).populate("room");
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ error: error.message });

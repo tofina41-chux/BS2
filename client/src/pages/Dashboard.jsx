@@ -164,8 +164,9 @@ export default function Dashboard() {
                             <span className="text-indigo-600">Ksh {room.pricePerHour}</span>
                             <span className="text-xs text-gray-400 font-normal">/hr</span>
                           </div>
-                          <Link to="/BookRoom" className="text-sm font-bold text-indigo-600 hover:text-indigo-800 underline">
-                            Book Now
+                          <Link to="/BookRoom" className="flex items-center space-x-3 ...">
+                            <CalendarPlus size={20} />
+                            <span>Book a Room</span>
                           </Link>
                         </div>
                       </div>

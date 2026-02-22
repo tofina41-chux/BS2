@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import Register from './pages/Register';
+import BookRoom from "./pages/BookRoom";
 
 function App() {
   // This 'user' state will start as null (not logged in)
@@ -16,6 +17,8 @@ function App() {
         <Route path="/login" element={<Login setUser={setUser} />} />
 
         <Route path="/register" element={<Register />} />
+
+        <Route path="/BookRoom" element={<BookRoom />} />
 
         <Route
           path="/dashboard"
@@ -36,6 +39,7 @@ function App() {
         />
 
         <Route path="/" element={<Navigate to="/login" />} />
+
       </Routes>
     </Router>
   );
