@@ -174,7 +174,7 @@ export default function AdminPanel() {
                     </td>
                     <td className="p-4">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${b.status === "Approved" ? "bg-green-100 text-green-700" :
-                          b.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
+                        b.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
                         }`}>
                         {b.status}
                       </span>
