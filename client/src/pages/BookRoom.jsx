@@ -13,16 +13,20 @@ export default function BookRoom() {
     endTime: ""
   });
 
-  // ✅ ADDED: Define storedUser here so the component can use it
+  // Get user from localStorage
   const storedUser = JSON.parse(localStorage.getItem("user"));
 
-  // 1. Fetch available rooms from the database
   useEffect(() => {
-    // ✅ ADDED: Redirect if not logged in
+    // 1. Check if user is logged in
     if (!storedUser) {
       alert("Please login to book a room");
       navigate("/login");
       return;
+    }
+
+    // 2. Double check if we actually have the email
+    if (!storedUser.email) {
+      console.error("User object found but email is missing:", storedUser);
     }
 
     const fetchRooms = async () => {
@@ -38,28 +42,32 @@ export default function BookRoom() {
 
   const handleBooking = async (e) => {
     e.preventDefault();
+    
     if (!selectedRoom) return alert("Please select a room first!");
+    
+    // Safety check: ensure we have the email before sending
+    if (!storedUser?.email) {
+      return alert("Your session is missing email data. Please logout and log back in.");
+    }
 
     try {
       const payload = {
         roomId: selectedRoom._id,
-        // ✅ Now storedUser is defined, so this won't crash
         userId: storedUser.id || storedUser._id,
         userName: storedUser.name,
-        userEmail: storedUser.email,
+        userEmail: storedUser.email, // ✅ Sending the verified email
         date: bookingData.date,
         startTime: bookingData.startTime,
         endTime: bookingData.endTime
       };
 
-      console.log("Sending Payload:", payload);
+      console.log("🚀 Sending Payload:", payload);
 
       const res = await api.post("/bookings/request", payload);
       alert("Success: " + res.data.message);
       navigate("/dashboard");
     } catch (err) {
       console.error("Full Error Object:", err);
-      // ✅ Improved error message logic
       const errMsg = err.response?.data?.error || err.response?.data?.message || "Server Unreachable";
       alert("Booking failed: " + errMsg);
     }
@@ -84,16 +92,17 @@ export default function BookRoom() {
                   <div
                     key={room._id}
                     onClick={() => setSelectedRoom(room)}
-                    className={`p-5 rounded-xl border-2 cursor-pointer transition-all ${selectedRoom?._id === room._id
-                      ? "border-indigo-600 bg-indigo-50"
-                      : "border-white bg-white hover:border-gray-200"
-                      }`}
+                    className={`p-5 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedRoom?._id === room._id
+                        ? "border-indigo-600 bg-indigo-50 shadow-md"
+                        : "border-white bg-white hover:border-gray-200"
+                    }`}
                   >
                     <h3 className="font-bold text-lg">{room.name}</h3>
                     <p className="text-gray-500 text-sm mb-3">{room.space}</p>
                     <div className="flex justify-between text-sm font-medium">
                       <span className="flex items-center gap-1"><Users size={16} /> {room.capacity}</span>
-                      <span className="text-indigo-600">Ksh {room.pricePerHour}/hr</span>
+                      <span className="text-indigo-600 font-bold">Ksh {room.pricePerHour}/hr</span>
                     </div>
                   </div>
                 ))
@@ -139,8 +148,8 @@ export default function BookRoom() {
 
               <div className="pt-4 border-t border-gray-100 mt-6">
                 <div className="flex justify-between mb-4">
-                  <span className="text-gray-500 font-medium">Room:</span>
-                  <span className="font-bold text-gray-800">{selectedRoom ? selectedRoom.name : "None selected"}</span>
+                  <span className="text-gray-500 font-medium">Selected:</span>
+                  <span className="font-bold text-gray-800">{selectedRoom ? selectedRoom.name : "None"}</span>
                 </div>
                 <button
                   type="submit"

@@ -5,6 +5,10 @@ const sendEmail = require("../utils/sendEmail");
 exports.requestBooking = async (req, res) => {
   try {
     const { roomId, userId, userName, userEmail, date, startTime, endTime } = req.body;
+    
+    // Safety log to ensure email is arriving from the frontend
+    console.log("New Booking Request Email:", userEmail);
+
     const newBooking = new Booking({
       room: roomId,
       user: userId,
@@ -26,52 +30,52 @@ exports.updateBookingStatus = async (req, res) => {
   try {
     const { status, adminMessage } = req.body;
 
-    // Update the booking and populate room info so we can use the room name in the email
     const updatedBooking = await Booking.findByIdAndUpdate(
       req.params.id,
       { status, adminMessage },
-      { new: true }
+      { returnDocument: 'after' } 
     ).populate("room");
 
     if (!updatedBooking) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    // --- NODEMAILER LOGIC ---
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-        <div style="background-color: ${status === 'Approved' ? '#16a34a' : '#dc2626'}; color: white; padding: 20px; text-align: center;">
-          <h1 style="margin: 0;">Booking ${status}</h1>
-        </div>
-        <div style="padding: 20px; color: #333;">
+    // --- DEBUGGING LOGS ---
+    console.log("Attempting to email user...");
+    console.log("Recipient Name:", updatedBooking.userName);
+    console.log("Recipient Email:", updatedBooking.userEmail);
+    // ----------------------
+
+    if (updatedBooking.userEmail) {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+          <h2 style="color: ${status === 'Approved' ? '#16a34a' : '#dc2626'}; text-align: center;">
+            Booking ${status}
+          </h2>
+          <hr style="border: 0; border-top: 1px solid #eee;" />
           <p>Hi <strong>${updatedBooking.userName}</strong>,</p>
-          <p>Your reservation request for <strong>${updatedBooking.room?.name || 'the requested room'}</strong> has been <strong>${status.toLowerCase()}</strong>.</p>
+          <p>Your reservation request for <strong>${updatedBooking.room?.name || 'the requested space'}</strong> has been ${status.toLowerCase()}.</p>
           
-          <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 5px 0;"><strong>Date:</strong> ${updatedBooking.date}</p>
-            <p style="margin: 5px 0;"><strong>Time:</strong> ${updatedBooking.startTime} - ${updatedBooking.endTime}</p>
+          <div style="background: #f9f9f9; padding: 10px; border-radius: 5px;">
+             <p><strong>Date:</strong> ${updatedBooking.date}</p>
+             <p><strong>Time:</strong> ${updatedBooking.startTime} - ${updatedBooking.endTime}</p>
           </div>
 
           <p><strong>Admin Message:</strong> ${adminMessage}</p>
-          
-          <p style="margin-top: 30px;">Thank you for using Swahilipot Hub Spaces.</p>
+          <br />
+          <p style="font-size: 12px; color: #777;">Thank you for using BS2 Booking System.</p>
         </div>
-        <div style="background-color: #f1f1f1; padding: 10px; text-align: center; font-size: 12px; color: #888;">
-          © 2026 Swahilipot Hub. All rights reserved.
-        </div>
-      </div>
-    `;
+      `;
 
-    // Trigger the email sending (we don't 'await' this so the API responds instantly)
-    sendEmail(
-      updatedBooking.userEmail,
-      `Booking Status Update: ${status}`,
-      emailHtml
-    );
-    // ------------------------
+      // Call the email utility
+      sendEmail(updatedBooking.userEmail, `BS2 Booking Update: ${status}`, emailHtml);
+    } else {
+      console.log("⚠️ Email not sent: The 'userEmail' field is empty in the database for this booking.");
+    }
 
     res.json({ message: `Booking ${status}`, booking: updatedBooking });
   } catch (error) {
+    console.error("Update Error:", error);
     res.status(500).json({ error: error.message });
   }
 };

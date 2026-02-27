@@ -17,7 +17,7 @@ exports.register = async (req, res) => {
             name,
             email,
             password,
-            role: "user" // Default role
+            role: "admin" // Default role
         });
 
         await newUser.save();
@@ -32,20 +32,24 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        // 1. Find user
         const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: "User not found" });
 
-        // 2. Check password (plain text for testing)
-        if (user.password !== password) {
+        if (!user || user.password !== password) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        // 3. Create Token
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-        res.json({ token, user: { id: user._id, name: user.name, role: user.role } });
+        // ✅ MUST include email here!
+        res.json({ 
+            token, 
+            user: { 
+                id: user._id, 
+                name: user.name, 
+                email: user.email, // 👈 CHECK THIS LINE
+                role: user.role 
+            } 
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

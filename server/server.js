@@ -15,7 +15,7 @@ connectDB();
 
 // Middleware
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://10.0.12.161:3002"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     credentials: true
 }));
