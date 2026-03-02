@@ -4,7 +4,7 @@ const Booking = require("../models/Booking");
 // Admin: Add a new room
 exports.addRoom = async (req, res) => {
   try {
-    const { name, space, capacity, price, amenities } = req.body;
+    const { name, space, capacity, price, amenities, image } = req.body;
 
     // Split amenities by comma and trim whitespace
     const amenitiesArray = amenities.split(",").map(item => item.trim());
@@ -15,6 +15,7 @@ exports.addRoom = async (req, res) => {
       capacity,
       pricePerHour: price,
       amenities: amenitiesArray
+      image: image || "https://via.placeholder.com/400x300?text=Room+Image" // Default image if none provided
     });
 
     await newRoom.save();

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Clock, MapPin, Users } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Info, CheckCircle2 } from "lucide-react";
 
 export default function BookRoom() {
   const navigate = useNavigate();
@@ -13,20 +13,12 @@ export default function BookRoom() {
     endTime: ""
   });
 
-  // Get user from localStorage
   const storedUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    // 1. Check if user is logged in
     if (!storedUser) {
-      alert("Please login to book a room");
       navigate("/login");
       return;
-    }
-
-    // 2. Double check if we actually have the email
-    if (!storedUser.email) {
-      console.error("User object found but email is missing:", storedUser);
     }
 
     const fetchRooms = async () => {
@@ -42,123 +34,178 @@ export default function BookRoom() {
 
   const handleBooking = async (e) => {
     e.preventDefault();
-    
     if (!selectedRoom) return alert("Please select a room first!");
-    
-    // Safety check: ensure we have the email before sending
-    if (!storedUser?.email) {
-      return alert("Your session is missing email data. Please logout and log back in.");
-    }
+    if (!storedUser?.email) return alert("Session missing email. Please re-login.");
 
     try {
       const payload = {
         roomId: selectedRoom._id,
         userId: storedUser.id || storedUser._id,
         userName: storedUser.name,
-        userEmail: storedUser.email, // ✅ Sending the verified email
+        userEmail: storedUser.email,
         date: bookingData.date,
         startTime: bookingData.startTime,
         endTime: bookingData.endTime
       };
 
-      console.log("🚀 Sending Payload:", payload);
-
-      const res = await api.post("/bookings/request", payload);
-      alert("Success: " + res.data.message);
+      await api.post("/bookings/request", payload);
+      alert("Success! Your booking request is now pending approval.");
       navigate("/dashboard");
     } catch (err) {
-      console.error("Full Error Object:", err);
-      const errMsg = err.response?.data?.error || err.response?.data?.message || "Server Unreachable";
-      alert("Booking failed: " + errMsg);
+      alert("Booking failed: " + (err.response?.data?.message || "Server error"));
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Reserve a Space</h1>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header Section */}
+      <div className="bg-white border-b border-slate-200 py-12 px-8 mb-8">
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
+            Reserve Your Creative Space
+          </h1>
+          <p className="text-slate-500 max-w-2xl mx-auto text-lg">
+            Choose from our specialized rooms at Swahilipot Hub. Whether it's a 
+            podcast session or a board meeting, we have the space for you.
+          </p>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Step 1: Select Room */}
-          <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-xl font-semibold text-gray-700 flex items-center gap-2">
-              <MapPin className="text-indigo-600" /> 1. Select a Room
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {rooms.length === 0 ? (
-                <p className="text-gray-500 italic">No rooms available or loading...</p>
-              ) : (
-                rooms.map((room) => (
-                  <div
-                    key={room._id}
-                    onClick={() => setSelectedRoom(room)}
-                    className={`p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                      selectedRoom?._id === room._id
-                        ? "border-indigo-600 bg-indigo-50 shadow-md"
-                        : "border-white bg-white hover:border-gray-200"
-                    }`}
-                  >
-                    <h3 className="font-bold text-lg">{room.name}</h3>
-                    <p className="text-gray-500 text-sm mb-3">{room.space}</p>
-                    <div className="flex justify-between text-sm font-medium">
-                      <span className="flex items-center gap-1"><Users size={16} /> {room.capacity}</span>
-                      <span className="text-indigo-600 font-bold">Ksh {room.pricePerHour}/hr</span>
+      <div className="max-w-7xl mx-auto px-6 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          
+          {/* Step 1: Select Room (Left Side - 8 Cols) */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                <span className="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
+                Available Spaces
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {rooms.map((room) => (
+                <div
+                  key={room._id}
+                  onClick={() => setSelectedRoom(room)}
+                  className={`group relative overflow-hidden rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
+                    selectedRoom?._id === room._id
+                      ? "border-indigo-600 ring-4 ring-indigo-50 bg-white"
+                      : "border-transparent bg-white shadow-sm hover:shadow-xl hover:-translate-y-1"
+                  }`}
+                >
+                  {/* Room Image */}
+                  <div className="h-44 w-full relative overflow-hidden">
+                    <img 
+                      src={room.image || "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80"} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      alt={room.name}
+                    />
+                    {selectedRoom?._id === room._id && (
+                      <div className="absolute inset-0 bg-indigo-600/20 flex items-center justify-center">
+                        <CheckCircle2 className="text-white drop-shadow-lg" size={48} />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-5">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-xl text-slate-800">{room.name}</h3>
+                      <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                        {room.capacity} seats
+                      </span>
+                    </div>
+                    <p className="text-slate-500 text-sm mb-4 line-clamp-1">{room.space}</p>
+                    
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <MapPin size={16} />
+                        <span className="text-xs font-semibold uppercase tracking-wide">Main Hub</span>
+                      </div>
+                      <span className="text-lg font-black text-indigo-600">
+                        Ksh {room.pricePerHour}<small className="text-xs text-slate-400 ml-1">/hr</small>
+                      </span>
                     </div>
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Step 2: Booking Details */}
-          <div className="bg-white p-6 rounded-2xl shadow-xl h-fit border border-gray-100">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-              <Calendar className="text-indigo-600" /> 2. Booking Info
-            </h2>
-            <form onSubmit={handleBooking} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                <input
-                  type="date"
-                  className="w-full p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                  onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <div className="w-1/2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                  <input
-                    type="time"
-                    className="w-full p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                    onChange={(e) => setBookingData({ ...bookingData, startTime: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="w-1/2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                  <input
-                    type="time"
-                    className="w-full p-3 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                    onChange={(e) => setBookingData({ ...bookingData, endTime: e.target.value })}
-                    required
-                  />
-                </div>
+          {/* Step 2: Booking Details (Right Side - 4 Cols) */}
+          <div className="lg:col-span-4">
+            <div className="sticky top-8 space-y-6">
+              <div className="bg-white rounded-3xl shadow-2xl shadow-indigo-100 p-8 border border-slate-100">
+                <h2 className="text-2xl font-bold text-slate-800 mb-8 flex items-center gap-3">
+                  <span className="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
+                  Booking Details
+                </h2>
+
+                <form onSubmit={handleBooking} className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <input
+                        type="date"
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-600 transition-all outline-none text-slate-700"
+                        onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 text-center block">Start</label>
+                      <input
+                        type="time"
+                        className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-600 transition-all outline-none text-slate-700 text-center"
+                        onChange={(e) => setBookingData({ ...bookingData, startTime: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 text-center block">End</label>
+                      <input
+                        type="time"
+                        className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-600 transition-all outline-none text-slate-700 text-center"
+                        onChange={(e) => setBookingData({ ...bookingData, endTime: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Selected Space</span>
+                        <span className="font-extrabold text-slate-800">{selectedRoom ? selectedRoom.name : "None selected"}</span>
+                      </div>
+                      {selectedRoom && <Info className="text-slate-300" size={20} />}
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-200 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 uppercase tracking-wider text-sm"
+                    >
+                      Confirm Booking Request
+                    </button>
+                  </div>
+                </form>
               </div>
 
-              <div className="pt-4 border-t border-gray-100 mt-6">
-                <div className="flex justify-between mb-4">
-                  <span className="text-gray-500 font-medium">Selected:</span>
-                  <span className="font-bold text-gray-800">{selectedRoom ? selectedRoom.name : "None"}</span>
+              {/* Tips Card */}
+              <div className="bg-indigo-900 rounded-3xl p-6 text-white overflow-hidden relative">
+                <div className="relative z-10">
+                  <h4 className="font-bold mb-2 flex items-center gap-2 italic">Quick Tip</h4>
+                  <p className="text-indigo-200 text-sm leading-relaxed">
+                    Booking requests are usually reviewed within 1 hour. You will receive an email confirmation once approved.
+                  </p>
                 </div>
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95"
-                >
-                  Request Booking
-                </button>
+                <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-indigo-500 rounded-full blur-2xl opacity-40"></div>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       </div>
